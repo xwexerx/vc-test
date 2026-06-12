@@ -22,7 +22,8 @@ function serveIndex(res) {
 }
 
 const server = http.createServer((req, res) => {
-  if (req.method === "GET" && (req.url === "/" || req.url === "/index.html")) {
+  if (req.method === "GET") {
+    // Serve index.html for any GET request (handles ?room= params and any path)
     serveIndex(res);
   } else {
     res.writeHead(404, { "Content-Type": "text/plain" });
