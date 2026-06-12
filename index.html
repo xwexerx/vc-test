@@ -577,27 +577,8 @@
     // -----------------------------------------------------------------------
     // Constants
     // -----------------------------------------------------------------------
-    const ICE_SERVERS = {
-      iceServers: [
-        { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:stun1.l.google.com:19302" },
-        {
-          urls: "turn:openrelay.metered.ca:80",
-          username: "openrelayproject",
-          credential: "openrelayproject",
-        },
-        {
-          urls: "turn:openrelay.metered.ca:443",
-          username: "openrelayproject",
-          credential: "openrelayproject",
-        },
-        {
-          urls: "turn:openrelay.metered.ca:443?transport=tcp",
-          username: "openrelayproject",
-          credential: "openrelayproject",
-        },
-      ],
-    };
+    // TURN config is fetched from /config at connect time (never hardcoded).
+    let turnConfig = null;
     const ROOM_LENGTH = 6;
     const VAD_THRESHOLD = 0.02;        // Voice activity detection threshold
     const VAD_POLL_MS = 100;           // How often to check speaking state
@@ -864,8 +845,40 @@
       // Don't connect to destination — we don't want feedback
     }
 
+    async function loadTurnConfig() {
+      const res = await fetch("/config");
+      if (!res.ok) throw new Error(`/config returned ${res.status}`);
+      return await res.json();
+    }
+
     function createPeerConnection() {
-      pc = new RTCPeerConnection(ICE_SERVERS);
+      // ICE servers are built by caller after fetching /config
+      throw new Error("Use createPeerConnectionWithConfig(config) instead");
+    }
+
+    async function createPeerConnectionWithConfig(config) {
+      const iceServers = [
+        { urls: "stun:stun.l.google.com:19302" },
+      ];
+      if (config.turnUrl) {
+        iceServers.push({
+          urls: `turn:${config.turnUrl}:80`,
+          username: config.turnUsername,
+          credential: config.turnCredential,
+        });
+        iceServers.push({
+          urls: `turn:${config.turnUrl}:443`,
+          username: config.turnUsername,
+          credential: config.turnCredential,
+        });
+        iceServers.push({
+          urls: `turns:${config.turnUrl}:443?transport=tcp`,
+          username: config.turnUsername,
+          credential: config.turnCredential,
+        });
+      }
+
+      pc = new RTCPeerConnection({ iceServers });
 
       // Add local tracks
       if (localStream) {
@@ -1054,7 +1067,7 @@
               pc = null;
             }
 
-            createPeerConnection();
+            createPeerConnectionWithConfig(turnConfig);
 
             if (msg.initiator) {
               await sendOffer();
@@ -1241,6 +1254,16 @@
       } catch (err) {
         statusText.textContent = "Mic Error";
         statusSub.textContent = err.message;
+        setStatus("disconnected");
+        return;
+      }
+
+      // Fetch TURN credentials from server (never hardcoded in the bundle)
+      try {
+        turnConfig = await loadTurnConfig();
+      } catch (err) {
+        statusText.textContent = "Config Error";
+        statusSub.textContent = "Could not load connection settings.";
         setStatus("disconnected");
         return;
       }

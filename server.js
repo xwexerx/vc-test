@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -22,6 +24,17 @@ function serveIndex(res) {
 }
 
 const server = http.createServer((req, res) => {
+  if (req.method === "GET" && req.url === "/config") {
+    // Serve TURN credentials from env vars so they're never in the frontend bundle
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({
+      turnUrl: process.env.TURN_URL,
+      turnUsername: process.env.TURN_USERNAME,
+      turnCredential: process.env.TURN_CREDENTIAL,
+    }));
+    return;
+  }
+
   if (req.method === "GET") {
     // Serve index.html for any GET request (handles ?room= params and any path)
     serveIndex(res);
