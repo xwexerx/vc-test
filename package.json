@@ -1,0 +1,13 @@
+{
+  "name": "p2p-voice-chat",
+  "version": "1.0.0",
+  "description": "Peer-to-peer voice chat app with WebRTC and WebSocket signaling",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "license": "MIT"
+}
