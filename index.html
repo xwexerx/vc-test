@@ -577,7 +577,27 @@
     // -----------------------------------------------------------------------
     // Constants
     // -----------------------------------------------------------------------
-    const ICE_SERVERS = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+    const ICE_SERVERS = {
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        {
+          urls: "turn:openrelay.metered.ca:80",
+          username: "openrelayproject",
+          credential: "openrelayproject",
+        },
+        {
+          urls: "turn:openrelay.metered.ca:443",
+          username: "openrelayproject",
+          credential: "openrelayproject",
+        },
+        {
+          urls: "turn:openrelay.metered.ca:443?transport=tcp",
+          username: "openrelayproject",
+          credential: "openrelayproject",
+        },
+      ],
+    };
     const ROOM_LENGTH = 6;
     const VAD_THRESHOLD = 0.02;        // Voice activity detection threshold
     const VAD_POLL_MS = 100;           // How often to check speaking state
@@ -900,6 +920,7 @@
       };
 
       pc.oniceconnectionstatechange = () => {
+        console.log("ICE state:", pc.iceConnectionState);
         if (pc && pc.iceConnectionState === "disconnected") {
           peerName.textContent = "Reconnecting…";
         }
